@@ -1,4 +1,5 @@
 const stops = [
+  {id:'00',title:'Na początek: Kreta i Heraklion',time:'Wstęp · posłuchajcie w drodze do punktu 1',description:'Krótka opowieść o wyspie i mieście, które za chwilę odkryjecie.',next:'Do punktu 1: park Georgiadis · zacieniony początek spaceru',lat:35.33576,lon:25.13816,file:'00 Wstep – Kreta i Heraklion.mp3'},
   {id:'01',title:'Park Georgiadis',time:'11:35 · zacieniony początek',description:'Zieleń i kreteńskie zioła tuż przy centrum.',next:'Do targu przy ulicy 1866 · 8–12 min',lat:35.33576,lon:25.13816,file:'01 Park Georgiadis.mp3'},
   {id:'02',title:'Targ przy ulicy 1866',time:'12:05 · lokalne smaki',description:'Zioła, sery, miód i historia ukryta w nazwie ulicy.',next:'Do katedry Agios Minas · 4–6 min',lat:35.33757,lon:25.13337,file:'02 Targ.mp3'},
   {id:'03',title:'Katedra Agios Minas',time:'12:30 · plac i katedra',description:'Opowieść o patronie miasta i długiej budowie świątyni.',next:'Do fontanny Morosiniego · 5–7 min',lat:35.33761,lon:25.13094,file:'03 Katedra.mp3'},
