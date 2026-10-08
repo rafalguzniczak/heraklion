@@ -27,7 +27,7 @@ list.innerHTML = stops.map((stop, index) => `
     <div class="stop-body"><p>${stop.description}</p>
       <div class="stop-actions">
         <button class="play" type="button" data-index="${index}" aria-label="Odtwórz: ${stop.title}">▶ Odtwórz</button>
-        <a class="map-link" target="_blank" rel="noopener" href="https://www.openstreetmap.org/?mlat=${stop.lat}&mlon=${stop.lon}#map=18/${stop.lat}/${stop.lon}">↗ Mapa</a>
+        <a class="map-link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lon}">↗ Mapa</a>
         <a class="download" href="${urlFor(stop)}" download>↓ MP3</a>
       </div></div><div class="leg"><b>→ Dalej:</b> ${stop.next}</div>
   </article>`).join('');
