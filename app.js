@@ -71,11 +71,12 @@ function updateNearestLocation() {
   }, error => {
     requestingLocation = false;
     const messages = {
-      1: 'Brak zgody na lokalizację. Włącz ją w ustawieniach przeglądarki.',
-      2: 'Nie udało się ustalić pozycji. Spróbuję ponownie za chwilę.',
-      3: 'Ustalanie pozycji trwa zbyt długo. Spróbuję ponownie za chwilę.'
+      1: 'Przeglądarka odmówiła dostępu do lokalizacji',
+      2: 'Nie udało się ustalić pozycji',
+      3: 'Ustalanie pozycji przekroczyło limit czasu'
     };
-    locationStatus.textContent = messages[error.code] || 'Nie udało się ustalić pozycji.';
+    const reason = error.message?.trim() || 'przeglądarka nie podała dodatkowych szczegółów';
+    locationStatus.textContent = `${messages[error.code] || 'Nie udało się ustalić pozycji'} (błąd ${error.code ?? 'bez kodu'}): ${reason}.`;
     if (error.code === 1) stopTracking();
   }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
 }
