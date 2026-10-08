@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#113b46">
+  <meta name="description" content="Spacer po Heraklionie — polski audioprzewodnik po 10 punktach trasy.">
+  <title>Heraklion · nasz spacer</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="eyebrow">KRETA · AUDIOPRZEWODNIK</div>
+      <h1>Heraklion<br><em>naszym tempem.</em></h1>
+      <p>Dziesięć krótkich opowieści na spacer od zielonego parku aż do bramy Chanioporta.</p>
+      <div class="hero-meta"><span>↗ Spacer po centrum</span><span>◷ Około 8 minut audio</span></div>
+    </header>
+
+    <main>
+      <section class="intro" aria-label="Wskazówka">
+        <span class="intro-icon" aria-hidden="true">♫</span>
+        <p>Dotrzyj do punktu, naciśnij <strong>Odtwórz</strong> i rozejrzyj się. Wskazówka pod nagraniem prowadzi do następnego miejsca.</p>
+      </section>
+      <div class="section-title"><h2>Przystanki</h2><span>01 — R</span></div>
+      <div id="stops" class="stops"></div>
+    </main>
+
+    <footer><p>Miłego spaceru, Rafał i Karolina ☀</p><small>Plan trasy jest orientacyjny. Przed autobusem sprawdźcie kierunek i przystanek na miejscu.</small></footer>
+  </div>
+
+  <div class="player" id="player" hidden>
+    <div class="player-inner">
+      <button class="player-toggle" id="player-toggle" aria-label="Odtwórz lub wstrzymaj">▶</button>
+      <div class="player-main">
+        <div class="player-label" id="player-label">Teraz słuchasz</div>
+        <div class="player-title" id="player-title"></div>
+        <div class="seek-row"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="1000" value="0" aria-label="Przewiń nagranie"><span id="duration">0:00</span></div>
+      </div>
+      <button class="player-next" id="player-next" aria-label="Następny punkt">→</button>
+    </div>
+  </div>
+  <audio id="audio" preload="metadata"></audio>
+  <script src="app.js" defer></script>
+</body>
+</html>
