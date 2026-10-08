@@ -42,11 +42,11 @@ function stopTracking() {
 }
 
 function updateNearestLocation() {
-  if (!tracking || requestingLocation || document.hidden || !navigator.geolocation) return;
+  if (!tracking || requestingLocation || !navigator.geolocation) return;
   requestingLocation = true;
   navigator.geolocation.getCurrentPosition(({ coords }) => {
     requestingLocation = false;
-    if (!tracking || document.hidden) return;
+    if (!tracking) return;
     const nearest = stops.filter(stop => stop.id !== '00').map(stop => ({
       stop,
       distance: distanceBetween(coords.latitude, coords.longitude, stop.lat, stop.lon)
@@ -99,14 +99,7 @@ locateButton.addEventListener('click', () => {
 });
 
 document.addEventListener('visibilitychange', () => {
-  if (!tracking) return;
-  clearInterval(locationTimer);
-  if (document.hidden) {
-    locationStatus.textContent = 'Aplikacja w tle — lokalizacja wstrzymana. Wznowi się po powrocie.';
-  } else {
-    updateNearestLocation();
-    locationTimer = setInterval(updateNearestLocation, 30000);
-  }
+  if (tracking && !document.hidden) updateNearestLocation();
 });
 
 list.innerHTML = stops.map((stop, index) => `
