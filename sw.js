@@ -1,4 +1,4 @@
-const CACHE = 'heraklion-guide-v2';
+const CACHE = 'heraklion-guide-v3';
 const APP = ['./', './index.html', './style.css', './app.js', './manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP)));

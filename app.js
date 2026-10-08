@@ -22,6 +22,93 @@ let current = -1;
 const urlFor = stop => `audio/${encodeURIComponent(stop.file)}`;
 const fmt = seconds => Number.isFinite(seconds) ? `${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}` : '0:00';
 
+const locateButton = document.querySelector('#locate');
+const locationStatus = document.querySelector('#location-status');
+let tracking = false, locationTimer = null, requestingLocation = false, lastNearestId = null;
+
+const distanceBetween = (lat1, lon1, lat2, lon2) => {
+  const rad = degrees => degrees * Math.PI / 180;
+  const dLat = rad(lat2 - lat1), dLon = rad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+function stopTracking() {
+  tracking = false;
+  clearInterval(locationTimer);
+  locationTimer = null;
+  locateButton.textContent = '📍 Włącz lokalizację na żywo';
+  locateButton.setAttribute('aria-pressed', 'false');
+}
+
+function updateNearestLocation() {
+  if (!tracking || requestingLocation || document.hidden || !navigator.geolocation) return;
+  requestingLocation = true;
+  navigator.geolocation.getCurrentPosition(({ coords }) => {
+    requestingLocation = false;
+    if (!tracking || document.hidden) return;
+    const nearest = stops.filter(stop => stop.id !== '00').map(stop => ({
+      stop,
+      distance: distanceBetween(coords.latitude, coords.longitude, stop.lat, stop.lon)
+    })).sort((a, b) => a.distance - b.distance)[0];
+    if (nearest.stop.id !== lastNearestId) {
+      document.querySelectorAll('.stop.nearby').forEach(card => card.classList.remove('nearby'));
+      const card = document.getElementById('stop-' + nearest.stop.id);
+      if (card) {
+        card.classList.add('nearby');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      lastNearestId = nearest.stop.id;
+    }
+    const distanceText = nearest.distance < 1000
+      ? 'około ' + (Math.round(nearest.distance / 10) * 10) + ' m'
+      : (nearest.distance / 1000).toFixed(1).replace('.', ',') + ' km';
+    locationStatus.textContent = nearest.distance <= 150
+      ? 'Jesteście przy: ' + nearest.stop.title + '.'
+      : 'Najbliższy punkt: ' + nearest.stop.title + ' — ' + distanceText + ' od Was.';
+    if (coords.accuracy > 100) locationStatus.textContent += ' Dokładność GPS: około ±' + Math.round(coords.accuracy) + ' m.';
+    locationStatus.textContent += ' Aktualizacja: ' + new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', minute: '2-digit' }).format(new Date()) + '.';
+  }, error => {
+    requestingLocation = false;
+    const messages = {
+      1: 'Brak zgody na lokalizację. Włącz ją w ustawieniach przeglądarki.',
+      2: 'Nie udało się ustalić pozycji. Spróbuję ponownie za chwilę.',
+      3: 'Ustalanie pozycji trwa zbyt długo. Spróbuję ponownie za chwilę.'
+    };
+    locationStatus.textContent = messages[error.code] || 'Nie udało się ustalić pozycji.';
+    if (error.code === 1) stopTracking();
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 });
+}
+
+locateButton.addEventListener('click', () => {
+  if (tracking) {
+    stopTracking();
+    locationStatus.textContent = 'Lokalizacja na żywo wyłączona.';
+    return;
+  }
+  if (!navigator.geolocation) {
+    locationStatus.textContent = 'Ta przeglądarka nie udostępnia lokalizacji.';
+    return;
+  }
+  tracking = true;
+  locateButton.textContent = '■ Wyłącz lokalizację na żywo';
+  locateButton.setAttribute('aria-pressed', 'true');
+  locationStatus.textContent = 'Ustalam pozycję…';
+  updateNearestLocation();
+  locationTimer = setInterval(updateNearestLocation, 30000);
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!tracking) return;
+  clearInterval(locationTimer);
+  if (document.hidden) {
+    locationStatus.textContent = 'Aplikacja w tle — lokalizacja wstrzymana. Wznowi się po powrocie.';
+  } else {
+    updateNearestLocation();
+    locationTimer = setInterval(updateNearestLocation, 30000);
+  }
+});
+
 list.innerHTML = stops.map((stop, index) => `
   <article class="stop" id="stop-${stop.id}">
     <div class="stop-head"><span class="number">${stop.id}</span><div class="stop-name"><h3>${stop.title}</h3><div class="stop-sub">${stop.time}</div></div></div>
