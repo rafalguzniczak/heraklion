@@ -7,7 +7,7 @@
   <meta name="description" content="Spacer po Heraklionie — polski audioprzewodnik po 10 punktach trasy.">
   <title>Heraklion · nasz spacer</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=20261008-location">
+  <link rel="stylesheet" href="style.css?v=20261010-captions">
 </head>
 <body>
   <div class="shell">
@@ -35,6 +35,10 @@
   </div>
 
   <div class="player" id="player" hidden>
+    <div class="caption-box" id="caption-box" hidden>
+      <div class="caption-heading"><span>Napisy</span><button id="captions-toggle" type="button" aria-pressed="true">Ukryj napisy</button></div>
+      <p id="caption-text"></p>
+    </div>
     <div class="player-inner">
       <button class="player-toggle" id="player-toggle" aria-label="Odtwórz lub wstrzymaj">▶</button>
       <div class="player-main">
@@ -46,6 +50,7 @@
     </div>
   </div>
   <audio id="audio" preload="metadata"></audio>
-  <script src="app.js?v=20261008-location-errors" defer></script>
+  <script src="captions.js?v=20261010-captions" defer></script>
+  <script src="app.js?v=20261010-captions" defer></script>
 </body>
 </html>

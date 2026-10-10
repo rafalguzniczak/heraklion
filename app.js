@@ -19,7 +19,51 @@ const toggle = document.querySelector('#player-toggle');
 const next = document.querySelector('#player-next');
 const seek = document.querySelector('#seek');
 let current = -1;
+const captionBox = document.querySelector('#caption-box');
+const captionText = document.querySelector('#caption-text');
+const captionsToggle = document.querySelector('#captions-toggle');
+let captionsVisible = true;
+let activeCueIndex = -1;
+const captionsFor = stop => window.HERAKLION_CAPTIONS?.[stop.file] || [];
+function updatePlayerSpace() {
+  document.querySelector('.shell').style.paddingBottom = `${Math.max(145, player.offsetHeight + 24)}px`;
+}
+if ('ResizeObserver' in window) new ResizeObserver(updatePlayerSpace).observe(player);
+window.addEventListener('resize', updatePlayerSpace);
+function updateCaptions() {
+  if (current < 0) return;
+  const cues = captionsFor(stops[current]);
+  const time = audio.currentTime;
+  const cueIndex = cues.findIndex(cue => time >= cue.start && time < cue.end);
+  if (cueIndex === activeCueIndex) return;
+  activeCueIndex = cueIndex;
+  captionText.textContent = cueIndex < 0 ? '…' : cues[cueIndex].text;
+  const card = document.getElementById(`stop-${stops[current].id}`);
+  card.querySelectorAll('.transcript-cue').forEach((button, index) => {
+    const selected = index === cueIndex;
+    button.classList.toggle('current', selected);
+    if (selected) button.setAttribute('aria-current', 'true');
+    else button.removeAttribute('aria-current');
+  });
+  // Keep the transcript's own scroll area in sync without moving the page.
+  const selected = card.querySelector('.transcript-cue.current');
+  const container = card.querySelector('.transcript-cues');
+  if (selected && container && card.querySelector('.transcript').open) {
+    const top = selected.offsetTop;
+    if (top < container.scrollTop || top + selected.offsetHeight > container.scrollTop + container.clientHeight) {
+      container.scrollTop = Math.max(0, top - container.clientHeight / 3);
+    }
+  }
+}
+captionsToggle.addEventListener('click', () => {
+  captionsVisible = !captionsVisible;
+  captionText.hidden = !captionsVisible;
+  captionsToggle.textContent = captionsVisible ? 'Ukryj napisy' : 'Pokaż napisy';
+  captionsToggle.setAttribute('aria-pressed', String(captionsVisible));
+  updatePlayerSpace();
+});
 const urlFor = stop => `audio/${encodeURIComponent(stop.file)}`;
+const escapeText = text => text.replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const fmt = seconds => Number.isFinite(seconds) ? `${Math.floor(seconds/60)}:${String(Math.floor(seconds%60)).padStart(2,'0')}` : '0:00';
 
 const locateButton = document.querySelector('#locate');
@@ -111,7 +155,9 @@ list.innerHTML = stops.map((stop, index) => `
         <button class="play" type="button" data-index="${index}" aria-label="Odtwórz: ${stop.title}">▶ Odtwórz</button>
         <a class="map-link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lon}">↗ Mapa</a>
         <a class="download" href="${urlFor(stop)}" download>↓ MP3</a>
-      </div></div><div class="leg"><b>→ Dalej:</b> ${stop.next}</div>
+      </div>
+      <details class="transcript"><summary>Pełna transkrypcja</summary><div class="transcript-cues">${captionsFor(stop).map((cue, cueIndex) => `<button type="button" class="transcript-cue" data-stop="${index}" data-cue="${cueIndex}"><time>${fmt(cue.start)}</time>${escapeText(cue.text)}</button>`).join('')}</div></details>
+    </div><div class="leg"><b>→ Dalej:</b> ${stop.next}</div>
   </article>`).join('');
 
 function refresh() {
@@ -127,17 +173,32 @@ function refresh() {
   next.disabled = current >= stops.length - 1;
 }
 
-async function play(index) {
+async function play(index, startAt = null) {
   if (index < 0 || index >= stops.length) return;
   if (index === current) {
+    if (startAt !== null) { audio.currentTime = startAt; updateCaptions(); try { await audio.play(); } catch (_) {} refresh(); return; }
     if (audio.paused) { try { await audio.play(); } catch (_) {} }
     else audio.pause();
     refresh();
     return;
   }
   current = index;
+  activeCueIndex = -2;
+  document.querySelectorAll('.transcript-cue.current').forEach(button => {
+    button.classList.remove('current'); button.removeAttribute('aria-current');
+  });
   audio.src = urlFor(stops[index]);
   player.hidden = false;
+  captionBox.hidden = false;
+  captionText.textContent = '…';
+  if (startAt !== null) {
+    const source = audio.src;
+    audio.addEventListener('loadedmetadata', () => {
+      if (audio.src === source) { audio.currentTime = startAt; updateCaptions(); }
+    }, { once: true });
+  }
+  updateCaptions();
+  updatePlayerSpace();
   document.querySelector('#player-title').textContent = stops[index].title;
   document.querySelector('#player-label').textContent = `${stops[index].id} · Teraz słuchasz`;
   document.querySelector('#elapsed').textContent = '0:00';
@@ -149,6 +210,12 @@ async function play(index) {
 }
 
 list.addEventListener('click', event => {
+  const cueButton = event.target.closest('.transcript-cue');
+  if (cueButton) {
+    const index = Number(cueButton.dataset.stop);
+    play(index, captionsFor(stops[index])[Number(cueButton.dataset.cue)].start);
+    return;
+  }
   const button = event.target.closest('.play');
   if (button) play(Number(button.dataset.index));
 });
@@ -157,7 +224,9 @@ next.addEventListener('click', () => play(current + 1));
 audio.addEventListener('play', refresh);
 audio.addEventListener('pause', refresh);
 audio.addEventListener('loadedmetadata', () => { document.querySelector('#duration').textContent = fmt(audio.duration); });
+audio.addEventListener('seeked', updateCaptions);
 audio.addEventListener('timeupdate', () => {
+  updateCaptions();
   document.querySelector('#elapsed').textContent = fmt(audio.currentTime);
   seek.value = audio.duration ? Math.round(audio.currentTime / audio.duration * 1000) : 0;
 });
